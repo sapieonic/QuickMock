@@ -1,18 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getDb } from '@/lib/db';
+import { queryAll } from '@/lib/db';
 import { Mock } from '@/lib/types';
 
 export const dynamic = 'force-dynamic';
 
-function handleMockRequest(request: NextRequest, pathSegments: string[]): NextResponse {
-  const db = getDb();
+async function handleMockRequest(request: NextRequest, pathSegments: string[]): Promise<NextResponse> {
   const routePath = pathSegments.join('/');
   const method = request.method.toUpperCase();
 
   // Find all active mocks matching route and method
-  const candidates = db.prepare(
-    'SELECT * FROM mocks WHERE route_path = ? AND method = ? AND is_active = 1'
-  ).all(routePath, method) as Mock[];
+  const candidates = await queryAll(
+    'SELECT * FROM mocks WHERE route_path = ? AND method = ? AND is_active = 1',
+    [routePath, method]
+  ) as unknown as Mock[];
 
   if (candidates.length === 0) {
     return NextResponse.json(

@@ -1,12 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getDb } from '@/lib/db';
-import { Mock } from '@/lib/types';
+import { queryOne, execute } from '@/lib/db';
 
 export const dynamic = 'force-dynamic';
 
 export async function PATCH(_request: NextRequest, { params }: { params: { id: string } }) {
-  const db = getDb();
-  const existing = db.prepare('SELECT * FROM mocks WHERE id = ?').get(params.id) as Mock | undefined;
+  const existing = await queryOne('SELECT * FROM mocks WHERE id = ?', [params.id]);
 
   if (!existing) {
     return NextResponse.json({ error: 'Mock not found' }, { status: 404 });
@@ -15,8 +13,8 @@ export async function PATCH(_request: NextRequest, { params }: { params: { id: s
   const newActive = existing.is_active ? 0 : 1;
   const now = new Date().toISOString();
 
-  db.prepare('UPDATE mocks SET is_active = ?, updated_at = ? WHERE id = ?').run(newActive, now, params.id);
+  await execute('UPDATE mocks SET is_active = ?, updated_at = ? WHERE id = ?', [newActive, now, params.id]);
 
-  const mock = db.prepare('SELECT * FROM mocks WHERE id = ?').get(params.id) as Mock;
+  const mock = await queryOne('SELECT * FROM mocks WHERE id = ?', [params.id]);
   return NextResponse.json(mock);
 }

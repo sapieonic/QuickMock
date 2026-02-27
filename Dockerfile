@@ -19,9 +19,6 @@ ENV NODE_ENV=production
 ENV HOSTNAME=0.0.0.0
 ENV PORT=3000
 
-# better-sqlite3 requires these native libs at runtime
-RUN apk add --no-cache libstdc++
-
 # Copy standalone server output
 COPY --from=builder /app/.next/standalone ./
 COPY --from=builder /app/.next/static ./.next/static

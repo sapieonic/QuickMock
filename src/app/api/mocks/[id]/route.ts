@@ -1,12 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getDb } from '@/lib/db';
-import { HTTP_METHODS, HttpMethod, Mock } from '@/lib/types';
+import { queryOne, execute } from '@/lib/db';
+import { HTTP_METHODS, HttpMethod } from '@/lib/types';
 
 export const dynamic = 'force-dynamic';
 
 export async function GET(_request: NextRequest, { params }: { params: { id: string } }) {
-  const db = getDb();
-  const mock = db.prepare('SELECT * FROM mocks WHERE id = ?').get(params.id) as Mock | undefined;
+  const mock = await queryOne('SELECT * FROM mocks WHERE id = ?', [params.id]);
 
   if (!mock) {
     return NextResponse.json({ error: 'Mock not found' }, { status: 404 });
@@ -16,8 +15,7 @@ export async function GET(_request: NextRequest, { params }: { params: { id: str
 }
 
 export async function PUT(request: NextRequest, { params }: { params: { id: string } }) {
-  const db = getDb();
-  const existing = db.prepare('SELECT * FROM mocks WHERE id = ?').get(params.id) as Mock | undefined;
+  const existing = await queryOne('SELECT * FROM mocks WHERE id = ?', [params.id]);
 
   if (!existing) {
     return NextResponse.json({ error: 'Mock not found' }, { status: 404 });
@@ -48,36 +46,36 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
   const normalizedPath = route_path.startsWith('/') ? route_path.slice(1) : route_path;
   const now = new Date().toISOString();
 
-  db.prepare(`
-    UPDATE mocks SET name = ?, route_path = ?, method = ?, request_headers = ?, query_params = ?,
+  await execute(
+    `UPDATE mocks SET name = ?, route_path = ?, method = ?, request_headers = ?, query_params = ?,
       response_status_code = ?, response_headers = ?, response_body = ?, is_active = ?, updated_at = ?
-    WHERE id = ?
-  `).run(
-    name,
-    normalizedPath,
-    normalizedMethod,
-    request_headers || null,
-    query_params || null,
-    response_status_code ?? 200,
-    response_headers || null,
-    response_body || null,
-    is_active !== undefined ? (is_active ? 1 : 0) : existing.is_active,
-    now,
-    params.id
+    WHERE id = ?`,
+    [
+      name,
+      normalizedPath,
+      normalizedMethod,
+      request_headers || null,
+      query_params || null,
+      response_status_code ?? 200,
+      response_headers || null,
+      response_body || null,
+      is_active !== undefined ? (is_active ? 1 : 0) : existing.is_active,
+      now,
+      params.id,
+    ]
   );
 
-  const mock = db.prepare('SELECT * FROM mocks WHERE id = ?').get(params.id) as Mock;
+  const mock = await queryOne('SELECT * FROM mocks WHERE id = ?', [params.id]);
   return NextResponse.json(mock);
 }
 
 export async function DELETE(_request: NextRequest, { params }: { params: { id: string } }) {
-  const db = getDb();
-  const existing = db.prepare('SELECT * FROM mocks WHERE id = ?').get(params.id) as Mock | undefined;
+  const existing = await queryOne('SELECT * FROM mocks WHERE id = ?', [params.id]);
 
   if (!existing) {
     return NextResponse.json({ error: 'Mock not found' }, { status: 404 });
   }
 
-  db.prepare('DELETE FROM mocks WHERE id = ?').run(params.id);
+  await execute('DELETE FROM mocks WHERE id = ?', [params.id]);
   return NextResponse.json({ message: 'Mock deleted' });
 }

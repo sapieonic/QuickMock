@@ -1,11 +1,11 @@
 # Mock Server
 
-A configurable mock API server built with Next.js. Define mock endpoints via a web UI and serve them at `/mock/{any_route}`. Supports configurable methods, headers, query params, status codes, and response bodies. Mock definitions are stored in SQLite.
+A configurable mock API server built with Next.js. Define mock endpoints via a web UI and serve them at `/mock/{any_route}`. Supports configurable methods, headers, query params, status codes, and response bodies. Mock definitions are stored in SQLite (local file or Turso cloud).
 
 ## Tech Stack
 
 - Next.js 14 (App Router) + TypeScript
-- better-sqlite3 (SQLite)
+- @libsql/client (SQLite via Turso — local file or cloud)
 - Tailwind CSS
 
 ## Getting Started
@@ -15,7 +15,22 @@ npm install
 npm run dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) to access the dashboard. The SQLite database is auto-created in `data/mocks.db` on first API call.
+Open [http://localhost:3000](http://localhost:3000) to access the dashboard. The SQLite database is auto-created in `data/mocks.db` on first API call (no configuration needed for local dev).
+
+### Environment Variables
+
+Copy `.env.example` to `.env.local` and configure as needed:
+
+```bash
+# Local dev (default — uses local SQLite file, no token needed)
+TURSO_DATABASE_URL=file:data/mocks.db
+
+# Cloud deployment (Turso hosted)
+TURSO_DATABASE_URL=libsql://your-db-name.turso.io
+TURSO_AUTH_TOKEN=your-token
+```
+
+If no environment variables are set, the server defaults to `file:data/mocks.db`.
 
 ### Docker
 
@@ -27,6 +42,15 @@ docker run -d --name mock-server -p 3000:3000 -v mock-data:/app/data mock-server
 ```
 
 The `-v mock-data:/app/data` flag persists the SQLite database across container restarts. Drop it if you want a fresh database each time.
+
+To connect to Turso cloud from Docker, pass environment variables:
+
+```bash
+docker run -d --name mock-server -p 3000:3000 \
+  -e TURSO_DATABASE_URL=libsql://your-db-name.turso.io \
+  -e TURSO_AUTH_TOKEN=your-token \
+  mock-server
+```
 
 ## Usage
 
@@ -113,7 +137,7 @@ The dashboard is also accessible at the same URL, and the **cURL copy button** w
 ```
 src/
 ├── lib/
-│   ├── db.ts              # SQLite singleton + schema init
+│   ├── db.ts              # Turso/libSQL client + schema init
 │   └── types.ts           # TypeScript interfaces
 ├── components/
 │   ├── Header.tsx          # Navigation header
