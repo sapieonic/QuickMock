@@ -17,6 +17,17 @@ npm run dev
 
 Open [http://localhost:3000](http://localhost:3000) to access the dashboard. The SQLite database is auto-created in `data/mocks.db` on first API call.
 
+### Docker
+
+Build and run with a single command:
+
+```bash
+docker build -t mock-server .
+docker run -d --name mock-server -p 3000:3000 -v mock-data:/app/data mock-server
+```
+
+The `-v mock-data:/app/data` flag persists the SQLite database across container restarts. Drop it if you want a fresh database each time.
+
 ## Usage
 
 ### Web UI
