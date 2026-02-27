@@ -1,36 +1,117 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Mock Server
+
+A configurable mock API server built with Next.js. Define mock endpoints via a web UI and serve them at `/mock/{any_route}`. Supports configurable methods, headers, query params, status codes, and response bodies. Mock definitions are stored in SQLite.
+
+## Tech Stack
+
+- Next.js 14 (App Router) + TypeScript
+- better-sqlite3 (SQLite)
+- Tailwind CSS
 
 ## Getting Started
 
-First, run the development server:
-
 ```bash
+npm install
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3000](http://localhost:3000) to access the dashboard. The SQLite database is auto-created in `data/mocks.db` on first API call.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Usage
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+### Web UI
 
-## Learn More
+- **Dashboard** (`/`) — List, search, and filter mock endpoints. Toggle active/inactive, edit, or delete.
+- **New Mock** (`/mocks/new`) — Create a mock endpoint with method, route, response status, headers, and body.
+- **Edit Mock** (`/mocks/[id]/edit`) — Update an existing mock.
 
-To learn more about Next.js, take a look at the following resources:
+### API
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+| Endpoint | Method | Description |
+|---|---|---|
+| `/api/mocks` | GET | List mocks (query: `search`, `method`, `active`) |
+| `/api/mocks` | POST | Create a mock |
+| `/api/mocks/[id]` | GET | Get a single mock |
+| `/api/mocks/[id]` | PUT | Update a mock |
+| `/api/mocks/[id]` | DELETE | Delete a mock |
+| `/api/mocks/[id]/toggle` | PATCH | Toggle active/inactive |
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+### Serving Mocks
 
-## Deploy on Vercel
+Any request to `/mock/{route}` is matched against active mock definitions by route path and HTTP method. When multiple mocks share the same route and method, the server picks the best match based on request headers and query params.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+```bash
+# Create a mock
+curl -X POST http://localhost:3000/api/mocks \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "Get Users",
+    "route_path": "api/users",
+    "method": "GET",
+    "response_status_code": 200,
+    "response_headers": "{\"Content-Type\": \"application/json\"}",
+    "response_body": "{\"users\": [{\"id\": 1, \"name\": \"Alice\"}]}"
+  }'
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+# Hit the mock
+curl http://localhost:3000/mock/api/users
+# => {"users": [{"id": 1, "name": "Alice"}]}
+```
+
+## Mock Configuration Fields
+
+| Field | Description |
+|---|---|
+| `name` | Display name for the mock |
+| `route_path` | Path after `/mock/` (e.g. `api/users`) |
+| `method` | HTTP method (GET, POST, PUT, DELETE, PATCH, HEAD, OPTIONS) |
+| `request_headers` | JSON object of headers to match against (optional) |
+| `query_params` | JSON object of query params to match against (optional) |
+| `response_status_code` | HTTP status code to return (default: 200) |
+| `response_headers` | JSON object of response headers |
+| `response_body` | Response body string |
+| `is_active` | Whether the mock is active |
+
+## Exposing via ngrok
+
+To make your mock server publicly accessible (useful for webhooks, mobile testing, or sharing with teammates), you can use [ngrok](https://ngrok.com):
+
+```bash
+# Install ngrok (macOS)
+brew install ngrok
+
+# Start the mock server
+npm run dev
+
+# In another terminal, expose port 3000
+ngrok http 3000
+```
+
+ngrok will output a public URL like `https://a1b2c3d4.ngrok-free.app`. Your mocks are now reachable externally:
+
+```bash
+curl https://a1b2c3d4.ngrok-free.app/mock/api/users
+```
+
+The dashboard is also accessible at the same URL, and the **cURL copy button** will automatically use the ngrok host.
+
+> **Tip:** Use `ngrok http 3000 --domain your-name.ngrok-free.app` with a free static domain to get a stable URL across restarts.
+
+## Project Structure
+
+```
+src/
+├── lib/
+│   ├── db.ts              # SQLite singleton + schema init
+│   └── types.ts           # TypeScript interfaces
+├── components/
+│   ├── Header.tsx          # Navigation header
+│   ├── MockTable.tsx       # Dashboard table
+│   └── MockForm.tsx        # Create/edit form
+└── app/
+    ├── page.tsx            # Dashboard
+    ├── mocks/new/          # Create mock page
+    ├── mocks/[id]/edit/    # Edit mock page
+    ├── api/mocks/          # CRUD API routes
+    └── mock/[...path]/     # Catch-all mock serving
+```
