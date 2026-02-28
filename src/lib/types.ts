@@ -12,6 +12,7 @@ export interface Mock {
   response_headers: string | null;
   response_body: string | null;
   is_active: number;
+  user_id: string;
   created_at: string;
   updated_at: string;
 }
