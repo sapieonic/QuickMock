@@ -2,18 +2,23 @@
 
 import { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
+import { useAuth } from '@/contexts/AuthContext';
 import MockForm from '@/components/MockForm';
 import { Mock } from '@/lib/types';
 
 export default function EditMockPage() {
   const params = useParams();
+  const { getIdToken } = useAuth();
   const [mock, setMock] = useState<Mock | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     async function fetchMock() {
-      const res = await fetch(`/api/mocks/${params.id}`);
+      const token = await getIdToken();
+      const res = await fetch(`/api/mocks/${params.id}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
       if (!res.ok) {
         setError('Mock not found');
         setLoading(false);
@@ -24,7 +29,7 @@ export default function EditMockPage() {
       setLoading(false);
     }
     fetchMock();
-  }, [params.id]);
+  }, [params.id, getIdToken]);
 
   if (loading) {
     return (

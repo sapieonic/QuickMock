@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { useAuth } from '@/contexts/AuthContext';
 import { Mock } from '@/lib/types';
 
 const METHOD_COLORS: Record<string, string> = {
@@ -56,16 +57,25 @@ interface MockTableProps {
 
 export default function MockTable({ mocks, onRefresh }: MockTableProps) {
   const router = useRouter();
+  const { getIdToken } = useAuth();
   const [copiedId, setCopiedId] = useState<number | null>(null);
 
   async function handleToggle(id: number) {
-    await fetch(`/api/mocks/${id}/toggle`, { method: 'PATCH' });
+    const token = await getIdToken();
+    await fetch(`/api/mocks/${id}/toggle`, {
+      method: 'PATCH',
+      headers: { Authorization: `Bearer ${token}` },
+    });
     onRefresh();
   }
 
   async function handleDelete(id: number, name: string) {
     if (!confirm(`Delete mock "${name}"?`)) return;
-    await fetch(`/api/mocks/${id}`, { method: 'DELETE' });
+    const token = await getIdToken();
+    await fetch(`/api/mocks/${id}`, {
+      method: 'DELETE',
+      headers: { Authorization: `Bearer ${token}` },
+    });
     onRefresh();
   }
 

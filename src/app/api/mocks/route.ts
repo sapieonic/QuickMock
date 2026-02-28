@@ -1,18 +1,25 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { type InValue } from '@libsql/client';
 import { queryAll, queryOne, execute } from '@/lib/db';
+import { verifyAuth, isAuthError } from '@/lib/auth';
 import { HTTP_METHODS, HttpMethod } from '@/lib/types';
 
 export const dynamic = 'force-dynamic';
 
 export async function GET(request: NextRequest) {
+  const authResult = await verifyAuth(request);
+  if (isAuthError(authResult)) {
+    return NextResponse.json({ error: authResult.error }, { status: authResult.status });
+  }
+  const userId = authResult.user.uid;
+
   const { searchParams } = new URL(request.url);
   const search = searchParams.get('search') || '';
   const method = searchParams.get('method') || '';
   const active = searchParams.get('active');
 
-  let query = 'SELECT * FROM mocks WHERE 1=1';
-  const params: InValue[] = [];
+  let query = 'SELECT * FROM mocks WHERE user_id = ?';
+  const params: InValue[] = [userId];
 
   if (search) {
     query += ' AND (name LIKE ? OR route_path LIKE ?)';
@@ -34,6 +41,12 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
+  const authResult = await verifyAuth(request);
+  if (isAuthError(authResult)) {
+    return NextResponse.json({ error: authResult.error }, { status: authResult.status });
+  }
+  const userId = authResult.user.uid;
+
   const body = await request.json();
 
   const { name, route_path, method, request_headers, query_params, response_status_code, response_headers, response_body, is_active } = body;
@@ -62,8 +75,8 @@ export async function POST(request: NextRequest) {
   const now = new Date().toISOString();
 
   const result = await execute(
-    `INSERT INTO mocks (name, route_path, method, request_headers, query_params, response_status_code, response_headers, response_body, is_active, created_at, updated_at)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    `INSERT INTO mocks (name, route_path, method, request_headers, query_params, response_status_code, response_headers, response_body, is_active, user_id, created_at, updated_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     [
       name,
       normalizedPath,
@@ -74,6 +87,7 @@ export async function POST(request: NextRequest) {
       response_headers || null,
       response_body || null,
       is_active !== undefined ? (is_active ? 1 : 0) : 1,
+      userId,
       now,
       now,
     ]

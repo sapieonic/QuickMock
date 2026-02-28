@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { useAuth } from '@/contexts/AuthContext';
 import { HTTP_METHODS, HttpMethod, Mock } from '@/lib/types';
 
 interface MockFormProps {
@@ -21,6 +22,7 @@ const METHOD_COLORS: Record<string, string> = {
 
 export default function MockForm({ mock, mode }: MockFormProps) {
   const router = useRouter();
+  const { getIdToken } = useAuth();
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
 
@@ -74,10 +76,14 @@ export default function MockForm({ mock, mode }: MockFormProps) {
 
       const url = mode === 'create' ? '/api/mocks' : `/api/mocks/${mock!.id}`;
       const httpMethod = mode === 'create' ? 'POST' : 'PUT';
+      const token = await getIdToken();
 
       const res = await fetch(url, {
         method: httpMethod,
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
         body: JSON.stringify(payload),
       });
 

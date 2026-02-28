@@ -38,6 +38,21 @@ async function initSchema(): Promise<void> {
     CREATE INDEX IF NOT EXISTS idx_mocks_route_method
       ON mocks (route_path, method)
   `);
+
+  // Migration: add user_id column (idempotent — errors if column already exists)
+  try {
+    await c.execute(`ALTER TABLE mocks ADD COLUMN user_id TEXT`);
+  } catch {
+    // Column already exists
+  }
+
+  await c.execute(`
+    CREATE INDEX IF NOT EXISTS idx_mocks_user_id
+      ON mocks (user_id)
+  `);
+
+  // Clean up orphaned mocks without a user
+  await c.execute(`DELETE FROM mocks WHERE user_id IS NULL`);
 }
 
 export async function getDb(): Promise<Client> {

@@ -1,11 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { queryOne, execute } from '@/lib/db';
+import { verifyAuth, isAuthError } from '@/lib/auth';
 import { HTTP_METHODS, HttpMethod } from '@/lib/types';
 
 export const dynamic = 'force-dynamic';
 
-export async function GET(_request: NextRequest, { params }: { params: { id: string } }) {
-  const mock = await queryOne('SELECT * FROM mocks WHERE id = ?', [params.id]);
+export async function GET(request: NextRequest, { params }: { params: { id: string } }) {
+  const authResult = await verifyAuth(request);
+  if (isAuthError(authResult)) {
+    return NextResponse.json({ error: authResult.error }, { status: authResult.status });
+  }
+  const userId = authResult.user.uid;
+
+  const mock = await queryOne('SELECT * FROM mocks WHERE id = ? AND user_id = ?', [params.id, userId]);
 
   if (!mock) {
     return NextResponse.json({ error: 'Mock not found' }, { status: 404 });
@@ -15,7 +22,13 @@ export async function GET(_request: NextRequest, { params }: { params: { id: str
 }
 
 export async function PUT(request: NextRequest, { params }: { params: { id: string } }) {
-  const existing = await queryOne('SELECT * FROM mocks WHERE id = ?', [params.id]);
+  const authResult = await verifyAuth(request);
+  if (isAuthError(authResult)) {
+    return NextResponse.json({ error: authResult.error }, { status: authResult.status });
+  }
+  const userId = authResult.user.uid;
+
+  const existing = await queryOne('SELECT * FROM mocks WHERE id = ? AND user_id = ?', [params.id, userId]);
 
   if (!existing) {
     return NextResponse.json({ error: 'Mock not found' }, { status: 404 });
@@ -49,7 +62,7 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
   await execute(
     `UPDATE mocks SET name = ?, route_path = ?, method = ?, request_headers = ?, query_params = ?,
       response_status_code = ?, response_headers = ?, response_body = ?, is_active = ?, updated_at = ?
-    WHERE id = ?`,
+    WHERE id = ? AND user_id = ?`,
     [
       name,
       normalizedPath,
@@ -62,20 +75,27 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
       is_active !== undefined ? (is_active ? 1 : 0) : existing.is_active,
       now,
       params.id,
+      userId,
     ]
   );
 
-  const mock = await queryOne('SELECT * FROM mocks WHERE id = ?', [params.id]);
+  const mock = await queryOne('SELECT * FROM mocks WHERE id = ? AND user_id = ?', [params.id, userId]);
   return NextResponse.json(mock);
 }
 
-export async function DELETE(_request: NextRequest, { params }: { params: { id: string } }) {
-  const existing = await queryOne('SELECT * FROM mocks WHERE id = ?', [params.id]);
+export async function DELETE(request: NextRequest, { params }: { params: { id: string } }) {
+  const authResult = await verifyAuth(request);
+  if (isAuthError(authResult)) {
+    return NextResponse.json({ error: authResult.error }, { status: authResult.status });
+  }
+  const userId = authResult.user.uid;
+
+  const existing = await queryOne('SELECT * FROM mocks WHERE id = ? AND user_id = ?', [params.id, userId]);
 
   if (!existing) {
     return NextResponse.json({ error: 'Mock not found' }, { status: 404 });
   }
 
-  await execute('DELETE FROM mocks WHERE id = ?', [params.id]);
+  await execute('DELETE FROM mocks WHERE id = ? AND user_id = ?', [params.id, userId]);
   return NextResponse.json({ message: 'Mock deleted' });
 }

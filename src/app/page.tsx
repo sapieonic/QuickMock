@@ -2,10 +2,23 @@
 
 import { useEffect, useState, useCallback } from 'react';
 import Link from 'next/link';
+import { useAuth } from '@/contexts/AuthContext';
 import { HTTP_METHODS, Mock } from '@/lib/types';
 import MockTable from '@/components/MockTable';
+import LandingPage from '@/components/LandingPage';
 
-export default function Dashboard() {
+export default function Home() {
+  const { user, loading: authLoading } = useAuth();
+
+  if (authLoading) return null;
+
+  if (!user) return <LandingPage />;
+
+  return <Dashboard />;
+}
+
+function Dashboard() {
+  const { getIdToken } = useAuth();
   const [mocks, setMocks] = useState<Mock[]>([]);
   const [search, setSearch] = useState('');
   const [methodFilter, setMethodFilter] = useState('');
@@ -13,14 +26,17 @@ export default function Dashboard() {
 
   const fetchMocks = useCallback(async () => {
     setLoading(true);
+    const token = await getIdToken();
     const params = new URLSearchParams();
     if (search) params.set('search', search);
     if (methodFilter) params.set('method', methodFilter);
-    const res = await fetch(`/api/mocks?${params.toString()}`);
+    const res = await fetch(`/api/mocks?${params.toString()}`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
     const data = await res.json();
     setMocks(data);
     setLoading(false);
-  }, [search, methodFilter]);
+  }, [search, methodFilter, getIdToken]);
 
   useEffect(() => {
     fetchMocks();
