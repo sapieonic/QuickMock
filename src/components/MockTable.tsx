@@ -108,21 +108,21 @@ export default function MockTable({ mocks, onRefresh }: MockTableProps) {
 
   return (
     <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
-      <table className="min-w-full divide-y divide-slate-200">
+      <table className="w-full table-fixed divide-y divide-slate-200">
         <thead>
           <tr className="bg-slate-50">
-            <th className="px-6 py-3.5 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Status</th>
-            <th className="px-6 py-3.5 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Name</th>
-            <th className="px-6 py-3.5 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Method</th>
-            <th className="px-6 py-3.5 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Route</th>
-            <th className="px-6 py-3.5 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Status Code</th>
-            <th className="px-6 py-3.5 text-right text-xs font-semibold text-slate-500 uppercase tracking-wider">Actions</th>
+            <th className="w-[70px] px-4 py-3.5 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Status</th>
+            <th className="w-[22%] px-4 py-3.5 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Name</th>
+            <th className="w-[80px] px-4 py-3.5 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Method</th>
+            <th className="px-4 py-3.5 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Route</th>
+            <th className="w-[90px] px-4 py-3.5 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Status Code</th>
+            <th className="w-[200px] px-4 py-3.5 text-right text-xs font-semibold text-slate-500 uppercase tracking-wider">Actions</th>
           </tr>
         </thead>
         <tbody className="divide-y divide-slate-100">
           {mocks.map((mock) => (
             <tr key={mock.id} className="hover:bg-indigo-50/40 transition-colors">
-              <td className="px-6 py-4 whitespace-nowrap">
+              <td className="px-4 py-4 whitespace-nowrap">
                 <button
                   onClick={() => handleToggle(mock.id)}
                   className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors duration-200 ${
@@ -136,20 +136,20 @@ export default function MockTable({ mocks, onRefresh }: MockTableProps) {
                   />
                 </button>
               </td>
-              <td className="px-6 py-4 whitespace-nowrap">
-                <span className="text-sm font-semibold text-slate-800">{mock.name}</span>
+              <td className="px-4 py-4">
+                <span className="block text-sm font-semibold text-slate-800 truncate" title={mock.name}>{mock.name}</span>
               </td>
-              <td className="px-6 py-4 whitespace-nowrap">
+              <td className="px-4 py-4 whitespace-nowrap">
                 <span className={`inline-flex items-center px-2.5 py-1 rounded-md text-xs font-bold ${METHOD_COLORS[mock.method] || 'bg-slate-100 text-slate-700'}`}>
                   {mock.method}
                 </span>
               </td>
-              <td className="px-6 py-4 whitespace-nowrap">
-                <code className="text-sm text-indigo-600 bg-indigo-50 px-2 py-1 rounded font-mono">
+              <td className="px-4 py-4">
+                <code className="block text-sm text-indigo-600 bg-indigo-50 px-2 py-1 rounded font-mono truncate" title={`/mock/${mock.route_path}`}>
                   /mock/{mock.route_path}
                 </code>
               </td>
-              <td className="px-6 py-4 whitespace-nowrap">
+              <td className="px-4 py-4 whitespace-nowrap">
                 <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${
                   mock.response_status_code >= 200 && mock.response_status_code < 300
                     ? 'bg-emerald-50 text-emerald-700'
@@ -160,7 +160,7 @@ export default function MockTable({ mocks, onRefresh }: MockTableProps) {
                   {mock.response_status_code}
                 </span>
               </td>
-              <td className="px-6 py-4 whitespace-nowrap text-right space-x-1">
+              <td className="px-4 py-4 whitespace-nowrap text-right space-x-1">
                 <button
                   onClick={() => handleCopyCurl(mock)}
                   className={`inline-flex items-center gap-1 px-3 py-1.5 text-xs font-medium rounded-md border transition-colors ${
