@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import Image from 'next/image';
 import { useAuth } from '@/contexts/AuthContext';
 import { FirebaseError } from 'firebase/app';
 
@@ -101,9 +102,7 @@ export default function LandingPage() {
         {/* Left Pane: Branding & Features */}
         <div>
           <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-indigo-100 text-indigo-700 text-xs font-semibold mb-6 tracking-wide uppercase">
-            <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20">
-              <path fillRule="evenodd" d="M11.3 1.046A1 1 0 0112 2v5h4a1 1 0 01.82 1.573l-7 10A1 1 0 018 18v-5H4a1 1 0 01-.82-1.573l7-10a1 1 0 011.12-.38z" clipRule="evenodd" />
-            </svg>
+            <Image src="/favicon.png" alt="" width={16} height={16} className="rounded-sm" />
             Mock Server
           </div>
 
